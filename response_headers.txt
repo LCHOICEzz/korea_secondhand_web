@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Content-Type: text/html
+Transfer-Encoding: chunked
+Connection: keep-alive
+Cache-Control: no-store, no-cache, must-revalidate
+content-security-policy: frame-ancestors 'none'
+referrer-policy: same-origin
+Set-Cookie: search_region=eyJyZWdpb25JZCI6IjM4NSIsInJlZ2lvbk5hbWUiOiLslZXqtazsoJXrj5kiLCJjb3VudHJ5Q29kZSI6ImtyIn0%3D; Max-Age=300; Path=/; HttpOnly; Secure; SameSite=Lax
+strict-transport-security: max-age=63072000; includeSubdomains; preload
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+Date: Sat, 07 Mar 2026 17:44:27 GMT
+x-envoy-upstream-service-time: 105
+Server: istio-envoy
+Content-Encoding: gzip
+Vary: Accept-Encoding
+X-Cache: Miss from cloudfront
+Via: 1.1 86b3010351a882116707943921a41eb6.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: HKG54-P1
+Alt-Svc: h3=":443"; ma=86400
+X-Amz-Cf-Id: rLSgmEUjBHsxFGUgjY67XVj4mAcqkqLt_8XL3My_7JQVX9wVjP9_5A==
+
