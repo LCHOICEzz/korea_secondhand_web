@@ -8,7 +8,7 @@ from datetime import datetime
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -186,13 +186,13 @@ def format_created_at(value: str) -> str:
         return raw
 
 
-def age_window_text(max_age_days: int) -> str:
-    if max_age_days <= 0:
+def age_window_text(max_age_days: Optional[int]) -> str:
+    if max_age_days is None or max_age_days <= 0:
         return "全部时间范围内"
     return f"最近{max_age_days}天内"
 
 
-def build_html(items: List[Dict], html_path: Path, max_age_days: int = 30) -> None:
+def build_html(items: List[Dict], html_path: Path, max_age_days: Optional[int] = None) -> None:
     age_text = age_window_text(max_age_days)
     groups = defaultdict(list)
     for it in items:
@@ -271,7 +271,7 @@ def summarize_desc(text: str, max_len: int = 120) -> str:
     return clean[: max_len - 1].rstrip() + "…"
 
 
-def build_share_html(items: List[Dict], brand: str, html_path: Path, max_age_days: int = 30) -> None:
+def build_share_html(items: List[Dict], brand: str, html_path: Path, max_age_days: Optional[int] = None) -> None:
     age_text = age_window_text(max_age_days)
     cards = []
     for it in items:

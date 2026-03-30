@@ -126,8 +126,29 @@ def detect_latest_run(out_root: Path, brand: str, started_before: float) -> Path
     return candidates[-1][1]
 
 
+def parse_brand_names(values: List[str]) -> List[str]:
+    names: List[str] = []
+    for value in values:
+        for part in value.split(","):
+            name = part.strip()
+            if name:
+                names.append(name)
+    return names
+
+
+def select_brand_specs(requested_brands: List[str]) -> List[Dict]:
+    if not requested_brands:
+        return DEFAULT_BRANDS
+    requested = set(requested_brands)
+    selected = [spec for spec in DEFAULT_BRANDS if spec["brand"] in requested]
+    missing = [brand for brand in requested_brands if brand not in {spec["brand"] for spec in DEFAULT_BRANDS}]
+    if missing:
+        raise SystemExit(f"unknown brands: {', '.join(missing)}")
+    return selected
+
+
 def build_brand_cmd(args, brand: str, variants: List[str], mode: str, run_dir: str = "", max_age_days: Optional[int] = None) -> List[str]:
-    effective_max_age_days = args.max_age_days if max_age_days is None else max_age_days
+    effective_max_age_days = args.max_age_days if args.max_age_days is not None else max_age_days
     cmd = [
         "python3",
         "-u",
@@ -158,11 +179,11 @@ def build_brand_cmd(args, brand: str, variants: List[str], mode: str, run_dir: s
         str(args.detail_batch_size),
         "--detail-batch-sleep",
         str(args.detail_batch_sleep),
-        "--max-age-days",
-        str(effective_max_age_days),
         "--mode",
         mode,
     ]
+    if effective_max_age_days is not None:
+        cmd.extend(["--max-age-days", str(effective_max_age_days)])
     if run_dir:
         cmd.extend(["--run-dir", run_dir])
     for term in variants:
@@ -185,7 +206,13 @@ def main() -> int:
     parser.add_argument("--region-batch-sleep", type=float, default=3.5)
     parser.add_argument("--detail-batch-size", type=int, default=80)
     parser.add_argument("--detail-batch-sleep", type=float, default=2.3)
-    parser.add_argument("--max-age-days", type=int, default=30, help="keep only items whose publish time is within the last N days; 0 disables the filter")
+    parser.add_argument("--brands", nargs="+", default=[], help="brands to run; omit this flag to run all default brands in order")
+    parser.add_argument(
+        "--max-age-days",
+        type=int,
+        default=None,
+        help="only keep items published within the last N days; omit this flag to fetch all available data",
+    )
     parser.add_argument(
         "--preview-only",
         action="store_true",
@@ -209,9 +236,10 @@ def main() -> int:
     summary_json = out_root / f"brand_batch_{batch_stamp}.json"
     summary_html = out_root / f"brand_batch_{batch_stamp}.html"
 
+    brand_specs = select_brand_specs(parse_brand_names(args.brands))
     results: List[Dict] = []
     active_post: List[Dict] = []
-    for idx, spec in enumerate(DEFAULT_BRANDS, start=1):
+    for idx, spec in enumerate(brand_specs, start=1):
         brand = spec["brand"]
         variants = spec["variants"]
         brand_max_age_days = spec.get("max_age_days")
@@ -219,7 +247,7 @@ def main() -> int:
         row = {
             "brand": brand,
             "variants": variants,
-            "max_age_days": args.max_age_days if brand_max_age_days is None else brand_max_age_days,
+            "max_age_days": args.max_age_days if args.max_age_days is not None else brand_max_age_days,
             "status": "failed",
             "run_dir": "",
             "preview_html": "",
@@ -244,7 +272,7 @@ def main() -> int:
             results.append(row)
         summary_json.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
         build_index(out_root, results, summary_html)
-        if idx != len(DEFAULT_BRANDS):
+        if idx != len(brand_specs):
             time.sleep(args.sleep_between_brands)
 
     for item in active_post:

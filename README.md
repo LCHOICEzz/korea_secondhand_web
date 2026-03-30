@@ -243,6 +243,7 @@ cd /path/to/karrot
 python3 -u run_multi_brand_pipeline.py \
   --slug-file output/daangn_region_slug_list.txt \
   --out-root output/brand_runs \
+  --brands 헤이에스 리즈 \
   --sleep-between-brands 35 \
   --region-workers 8 \
   --detail-workers 5 \
@@ -253,7 +254,8 @@ python3 -u run_multi_brand_pipeline.py \
   --region-batch-size 120 \
   --region-batch-sleep 3 \
   --detail-batch-size 80 \
-  --detail-batch-sleep 2
+  --detail-batch-sleep 2 \
+  --max-age-days 30
 ```
 
 默认品牌顺序：
@@ -263,6 +265,13 @@ python3 -u run_multi_brand_pipeline.py \
 3. `라벨르블랑`
 4. `헤이에스`
 5. `리즈`
+
+说明：
+
+- 不传 `--brands` 时，按默认品牌顺序全部执行
+- 传入 `--brands` 时，只执行指定品牌，顺序以默认品牌表为准
+- 不传 `--max-age-days` 时，抓取全部可获取数据
+- 传入 `--max-age-days N` 时，只保留最近 `N` 天的数据
 
 ### 6. 后台运行
 
@@ -283,6 +292,7 @@ nohup python3 -u run_multi_brand_pipeline.py \
   --region-batch-sleep 3 \
   --detail-batch-size 80 \
   --detail-batch-sleep 2 \
+  --max-age-days 30 \
   > logs/karrot_batch_$(date +%Y%m%d_%H%M%S).log 2>&1 &
 ```
 

@@ -40,8 +40,8 @@ def parse_created_at(value: Any) -> Optional[datetime]:
     return dt.astimezone(timezone.utc)
 
 
-def is_within_max_age(created_at: Any, max_age_days: int) -> bool:
-    if max_age_days <= 0:
+def is_within_max_age(created_at: Any, max_age_days: Optional[int]) -> bool:
+    if max_age_days is None or max_age_days <= 0:
         return True
     dt = parse_created_at(created_at)
     if dt is None:
@@ -365,7 +365,12 @@ def main() -> int:
     parser.add_argument("--detail-batch-size", type=int, default=80, help="submit detail fetch tasks in batches")
     parser.add_argument("--detail-batch-sleep", type=float, default=2.3, help="sleep seconds between detail batches")
     parser.add_argument("--output-dir", default="output/multi_region")
-    parser.add_argument("--max-age-days", type=int, default=30, help="keep only items whose publish time is within the last N days; 0 disables the filter")
+    parser.add_argument(
+        "--max-age-days",
+        type=int,
+        default=None,
+        help="only keep items published within the last N days; omit this flag to fetch all available data",
+    )
     parser.add_argument(
         "--skip-translation",
         action="store_true",

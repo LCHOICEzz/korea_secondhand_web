@@ -8,7 +8,7 @@ import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 KOREAN_RE = re.compile(r"[\uac00-\ud7a3]")
@@ -114,13 +114,13 @@ def format_created_at(value: str) -> str:
         return raw
 
 
-def age_window_text(max_age_days: int) -> str:
-    if max_age_days <= 0:
+def age_window_text(max_age_days: Optional[int]) -> str:
+    if max_age_days is None or max_age_days <= 0:
         return "全部时间范围内"
     return f"最近{max_age_days}天内"
 
 
-def build_html(items: List[Dict], brand: str, out_html: Path, max_age_days: int) -> None:
+def build_html(items: List[Dict], brand: str, out_html: Path, max_age_days: Optional[int]) -> None:
     items = sort_items_by_recent(items)
     age_text = age_window_text(max_age_days)
     cards = []
@@ -244,7 +244,7 @@ def build_preview_items(raw_dir: Path) -> List[Dict]:
     return sort_items_by_recent(preview_items)
 
 
-def build_preview_html(items: List[Dict], brand: str, out_html: Path, max_age_days: int) -> None:
+def build_preview_html(items: List[Dict], brand: str, out_html: Path, max_age_days: Optional[int]) -> None:
     items = sort_items_by_recent(items)
     age_text = age_window_text(max_age_days)
     cards = []
@@ -300,7 +300,7 @@ body {{ font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','
     out_html.write_text(doc, encoding="utf-8")
 
 
-def build_preview_artifacts(run_dir: Path, brand: str, max_age_days: int) -> None:
+def build_preview_artifacts(run_dir: Path, brand: str, max_age_days: Optional[int]) -> None:
     raw_dir = run_dir / "raw"
     items = build_preview_items(raw_dir)
     preview_json = run_dir / f"karrot_{brand}_ongoing_preview.json"
@@ -365,12 +365,12 @@ def build_scan_cmd(args, raw_dir: Path) -> List[str]:
         str(args.detail_batch_size),
         "--detail-batch-sleep",
         str(args.detail_batch_sleep),
-        "--max-age-days",
-        str(args.max_age_days),
         "--images-per-item",
         "-1",
         "--skip-translation",
     ]
+    if args.max_age_days is not None:
+        scan_cmd.extend(["--max-age-days", str(args.max_age_days)])
     for term in args.search_variant:
         scan_cmd.extend(["--search-variant", term])
     return scan_cmd
@@ -397,7 +397,7 @@ def build_fix_cmd(args, run_dir: Path, raw_dir: Path) -> List[str]:
     ]
 
 
-def postprocess_brand(run_dir: Path, brand: str, max_age_days: int) -> None:
+def postprocess_brand(run_dir: Path, brand: str, max_age_days: Optional[int]) -> None:
     fixmod = load_module(Path(__file__).with_name("fix_multi_region_output.py"), f"fixmod_{brand}")
     raw_dir = run_dir / "raw"
     fixed_json = run_dir / f"karrot_{brand}_ongoing_cn_local_fixed.json"
@@ -482,7 +482,12 @@ def main() -> int:
     p.add_argument("--region-batch-sleep", type=float, default=3.5)
     p.add_argument("--detail-batch-size", type=int, default=80)
     p.add_argument("--detail-batch-sleep", type=float, default=2.3)
-    p.add_argument("--max-age-days", type=int, default=30, help="keep only items whose publish time is within the last N days; 0 disables the filter")
+    p.add_argument(
+        "--max-age-days",
+        type=int,
+        default=None,
+        help="only keep items published within the last N days; omit this flag to fetch all available data",
+    )
     p.add_argument(
         "--safe-mode",
         action="store_true",
